@@ -1,5 +1,5 @@
 # FelicityConverter
-A gateway to bring Felicity Home Storage Batteries to Victron GX devices
+An ESP32 based monitor/gateway for LPBA48100-OL Felicity Home Storage Batteries. Reads out all battery data via RS485 and can act as a e.g. MQTT Client sending them to some home-automation (TBD). Works as gateway and sends the data not being sent by battery (e.g. highest cell voltage) to Victron GX devices via BMS-Can.
 
 ## Pinout PCS connector at battery
 | Pin number | Role    | Remarks                                                        |
