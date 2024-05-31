@@ -31,6 +31,7 @@ Baudrate is 9600Bd. Battery seems to implement Modbus (or some sort of, didn't c
 ## CAN
 The batteries that talk already CAN only send some frames. Baudrate is 500kBd. 
 The frames are always sent multiple times (e.g. five consecutive frames of the same content), maybe they hope that at least one makes it to the Victron.
+Battery sends an Error-Frame after each 4th x305/x307-Burst by Victron. It seams to have problems processing the x307-Frame by the Victron. Luckily with the gateway, this behavior vanishes as the gateway sends an ACK to the x307-Frame before the battery can drop off the Error-Frame.
 
 ### Frames sent by battery
 | CAN ID | Content        | Remarks                                                                                                |
