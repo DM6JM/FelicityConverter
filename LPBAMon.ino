@@ -570,13 +570,25 @@ void loop() {
         Serial.println("Sending frame >Info: ");
       }
 
+      uint8_t BCD_battVersion_High = 0;
+      uint8_t BCD_battVersion_Low = 0;
+      int battVersionTemp = battVersion;
+      if(battVersionTemp < 999)
+      {
+        while(battVersionTemp >= 100 )
+        {
+          battVersionTemp -= 100;
+          BCD_battVersion_High++;
+        }
+        BCD_battVersion_Low = (uint8_t)(battVersionTemp & 0xFF);
+      }
       txFrame.identifier = 0x35F; // Info
       txFrame.extd = 0;
       txFrame.data_length_code = 8;
       txFrame.data[0] = 0xAA; // Product code
       txFrame.data[1] = 0x55;
-      txFrame.data[2] = (uint8_t)((battVersion) & 0xFF); // Firmware version
-      txFrame.data[3] = (uint8_t)((battVersion >> 8) & 0xFF);    
+      txFrame.data[2] = BCD_battVersion_High; // Firmware version
+      txFrame.data[3] = BCD_battVersion_Low;    
       txFrame.data[4] = 0x64; // Capacity available 100Ah    
       txFrame.data[5] = 0x00;    
       txFrame.data[6] = 0x00;
@@ -670,6 +682,20 @@ void loop() {
         Serial.println("Sending frame >LowCellName: ");
       }
 
+      uint8_t voltageNum10s = 0;
+      uint8_t voltageNum1s = 0;
+
+      while((minVoltageNum >= 10) && (minVoltageNum < 100))
+      {
+        minVoltageNum -= 10;
+        voltageNum10s++;
+      }
+      while((minVoltageNum >= 10) && (minVoltageNum < 100))
+      {
+        minVoltageNum--;
+        voltageNum1s++;
+      }
+
       txFrame.identifier = 0x374; // String to write for the lowest cell
       txFrame.extd = 0;
       txFrame.data_length_code = 8;
@@ -678,8 +704,8 @@ void loop() {
       txFrame.data[2] = 'l';
       txFrame.data[3] = 'l';
       txFrame.data[4] = ' ';
-      txFrame.data[5] = 0x30 + (uint8_t)minVoltageNum; 
-      txFrame.data[6] = 0x00;
+      txFrame.data[5] = (voltageNum10s) ? (voltageNum10s + 0x30) : (voltageNum1s + 0x30);
+      txFrame.data[6] = (voltageNum10s) ? (voltageNum1s + 0x30) : 0x00;
       txFrame.data[7] = 0x00;
       // Accepts both pointers and references 
       txResult = ESP32Can.writeFrame(txFrame);  // timeout defaults to 1 ms
@@ -697,6 +723,20 @@ void loop() {
         Serial.println("Sending frame >HighCellName: ");
       }
 
+      voltageNum10s = 0;
+      voltageNum1s = 0;
+
+      while((maxVoltageNum >= 10) && (maxVoltageNum < 100))
+      {
+        maxVoltageNum -= 10;
+        voltageNum10s++;
+      }
+      while((maxVoltageNum >= 10) && (maxVoltageNum < 100))
+      {
+        maxVoltageNum--;
+        voltageNum1s++;
+      }
+
       txFrame.identifier = 0x375; // String to write for the highest cell
       txFrame.extd = 0;
       txFrame.data_length_code = 8;
@@ -705,8 +745,8 @@ void loop() {
       txFrame.data[2] = 'l';
       txFrame.data[3] = 'l';    
       txFrame.data[4] = ' ';    
-      txFrame.data[5] = 0x30 + (uint8_t)maxVoltageNum;    
-      txFrame.data[6] = 0x00;
+      txFrame.data[5] = (voltageNum10s) ? (voltageNum10s + 0x30) : (voltageNum1s + 0x30);
+      txFrame.data[6] = (voltageNum10s) ? (voltageNum1s + 0x30) : 0x00;
       txFrame.data[7] = 0x00;
       // Accepts both pointers and references 
       txResult = ESP32Can.writeFrame(txFrame);  // timeout defaults to 1 ms
