@@ -635,16 +635,16 @@ void loop() {
       }
 
       float minVoltage = 5.0f;
-      int minVoltageNum;
+      int minVoltageNum = 0;
 
       float maxVoltage = 0.0f;
-      int maxVoltageNum;
+      int maxVoltageNum = (NUMBEROFCELLS - 1);
 
       float minTemp = 200.0f;
-      int minTempNum;
+      int minTempNum = 0;
 
       float maxTemp = -200.0f;
-      int maxTempNum;
+      int maxTempNum = (NUMBEROFTEMPS - 1);
 
       for(int i = 0; i < NUMBEROFCELLS; i++)
       {
@@ -710,14 +710,19 @@ void loop() {
       uint8_t voltageNum10s = 0;
       uint8_t voltageNum1s = 0;
 
+      minVoltageNum++; // Adjust indexes to human numbers
+      maxVoltageNum++;
+      minTempNum++;
+      maxTempNum++;
+
       while((minVoltageNum >= 10) && (minVoltageNum < 100))
       {
         minVoltageNum -= 10;
         voltageNum10s++;
       }
-      while((minVoltageNum >= 10) && (minVoltageNum < 100))
+      while((minVoltageNum >= 1) && (minVoltageNum < 100))
       {
-        minVoltageNum--;
+        minVoltageNum -= 1;
         voltageNum1s++;
       }
 
@@ -756,9 +761,9 @@ void loop() {
         maxVoltageNum -= 10;
         voltageNum10s++;
       }
-      while((maxVoltageNum >= 10) && (maxVoltageNum < 100))
+      while((maxVoltageNum >= 1) && (maxVoltageNum < 100))
       {
-        maxVoltageNum--;
+        maxVoltageNum -=1;
         voltageNum1s++;
       }
 
