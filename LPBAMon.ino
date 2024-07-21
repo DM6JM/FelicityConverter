@@ -2,6 +2,7 @@
 /* Felicity LPBA48100-OL data converter           */
 /**************************************************/
 
+//#define USEDISPLAY
 
 /******************************/
 /* Includes                   */
@@ -10,6 +11,15 @@
 #include <ESP32-TWAI-CAN.hpp>
 // Arduino Lib - "Modbus by UL DARA" (https://github.com/uldara1/Modbus)
 #include <Modbus.h>
+
+#ifdef USEDISPLAY
+* For the display */
+#include "Adafruit_ThinkInk.h"
+
+/* For SD card image reading */
+#include <SdFat.h>                     // SD card & FAT filesystem library
+#include <Adafruit_ImageReader_EPD.h>  // Image-reading functions
+#endif
 
 /******************************/
 /* Defines                    */
@@ -83,6 +93,8 @@
 #define BATREADOK_ALL (BATREADOK_VERSION + BATREADOK_CELLINFO + BATREADOK_LIMITS + BATREADOK_INFO)
 
 #define MAXBATIDFAILS 20
+
+#define CAN351ALIVE_DEF 6
 /******************************/
 /* Typedefs                   */
 /******************************/
@@ -119,7 +131,8 @@ int batClientID = CLIENTID;
 Modbus batterybus(RS485);
 
 CanFrame rxFrame;
-unsigned int can305Count = 0;
+unsigned int can305Count = 0; // Frame by victron
+unsigned int can351Alive = 0; // Frame by battery (DVCC)
 bool canSendMakesSense = false;
 
 long mainLoopTimer = 0;
@@ -199,6 +212,9 @@ void loop() {
       case 0x0351:
       {
         // Serial.printf("Received frame 351h DVCC: %02X%02X %02X%02X %02X%02X %02X%02X\r\n", rxFrame.data[0], rxFrame.data[1], rxFrame.data[2], rxFrame.data[3], rxFrame.data[4], rxFrame.data[5], rxFrame.data[6], rxFrame.data[7]);
+        
+        can351Alive = CAN351ALIVE_DEF;
+
         break;
       }
       case 0x0355:
@@ -277,6 +293,11 @@ void loop() {
   {
     mainLoopTimer = millis();
     batReadOk = 0;  
+
+    if(can351Alive > 0) // Slowly decrease to stop talking if battery is dead
+    {
+      can351Alive--;
+    }
 
     if(batAltIDuse)
     {
@@ -560,8 +581,12 @@ void loop() {
     }
 
     //Check if it makes sense to send data via CAN
-    if(batDataOk && canSendMakesSense && (can305Count > 0)) //Wait until we see first x305 frames sent by Victron
+    //Wait until we see first x305 frames sent by Victron
+    //And don't send, if battery didnt send DVCC too long
+    if(batDataOk && canSendMakesSense && (can305Count > 0) && (can351Alive > 0)) 
     {
+      digitalWrite(LED_MQ_PIN, 1); //XXX: MQ LED is currently used to show CAN sending state
+
       CanFrame txFrame = { 0 };
       bool txResult;
 
@@ -842,6 +867,11 @@ void loop() {
           Serial.println("failed");      
       }
     }
+    else
+    {
+      // No sending via CAN is done      
+      digitalWrite(LED_MQ_PIN, 0); //XXX: MQ LED is currently used to show CAN sending state    
+    }
 
     // Serial.print("Status TXErr: ");
     // Serial.println(ESP32Can.txErrorCounter());
@@ -890,37 +920,3 @@ void loop() {
 /******************************/
 /* User Functions             */
 /******************************/
-
-// void onCANReceive(int packetSize) {
-//   // received a packet
-//   Serial.print("Received ");
-
-//   if (CAN.packetExtended()) {
-//     Serial.print("extended ");
-//   }
-
-//   if (CAN.packetRtr()) {
-//     // Remote transmission request, packet contains no data
-//     Serial.print("RTR ");
-//   }
-
-//   Serial.print("packet with id 0x");
-//   Serial.print(CAN.packetId(), HEX);
-
-//   if (CAN.packetRtr()) {
-//     Serial.print(" and requested length ");
-//     Serial.println(CAN.packetDlc());
-//   } else {
-//     Serial.print(" and length ");
-//     Serial.println(packetSize);
-
-//     // only print packet data for non-RTR packets
-//     while (CAN.available()) {
-//       Serial.print((char)CAN.read());
-//     }
-//     Serial.println();
-//   }
-
-//   Serial.println();
-// }
-
